@@ -1,0 +1,546 @@
+{% extends 'base.html' %}
+{% load django_tables2 %}
+{% load crispy_forms_tags %}
+
+{% block title %}Rentals Management - MWF UNIHIVE{% endblock %}
+
+{% block description %}Complete rental management with CRUD functionality in one page{% endblock %}
+
+{% block extra_head %}
+<style>
+    .rental-container {
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        min-height: calc(100vh - 200px);
+    }
+    
+    .stats-card {
+        background: linear-gradient(135deg, #7400B8 0%, #9739C8 100%);
+        border-radius: 12px;
+        box-shadow: 0 10px 25px -5px rgba(116, 0, 184, 0.3);
+    }
+    
+    .search-container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e2e8f0;
+    }
+    
+    .table-container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+    
+    .btn-unity {
+        background: linear-gradient(135deg, #7400B8 0%, #9739C8 100%);
+        transition: all 0.3s ease;
+        border: none;
+    }
+    
+    .btn-unity:hover {
+        background: linear-gradient(135deg, #8013BD 0%, #A24CCD 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(116, 0, 184, 0.3);
+    }
+    
+    .btn-add {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    }
+    
+    .btn-add:hover {
+        background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3);
+    }
+    
+    .table-hover tbody tr:hover {
+        background-color: #f8fafc !important;
+        transform: scale(1.01);
+        transition: all 0.2s ease;
+    }
+    
+    .pagination-container .page-link {
+        color: #7400B8;
+        border-color: #e2e8f0;
+        margin: 0 2px;
+        border-radius: 6px;
+        padding: 8px 12px;
+        transition: all 0.2s ease;
+    }
+    
+    .pagination-container .page-link:hover {
+        background-color: #7400B8;
+        color: white;
+        transform: translateY(-1px);
+    }
+    
+    .pagination-container .page-item.active .page-link {
+        background-color: #7400B8;
+        border-color: #7400B8;
+    }
+    
+    .modal-overlay {
+        background-color: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+    }
+    
+    .modal-content {
+        animation: modalSlideIn 0.3s ease-out;
+    }
+    
+    @keyframes modalSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-20px) scale(0.95);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+    
+    .fade-in {
+        animation: fadeIn 0.5s ease-out;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .rental-badge {
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .badge-single-room { background-color: #dbeafe; color: #1e40af; }
+    .badge-double-room { background-color: #dcfce7; color: #166534; }
+    .badge-shop { background-color: #fef3c7; color: #92400e; }
+    .badge-apartment { background-color: #ede9fe; color: #6b46c1; }
+    .badge-house { background-color: #fed7e2; color: #be185d; }
+    .badge-studio { background-color: #fce7f3; color: #be2684; }
+    
+    .currency-amount {
+        font-weight: 600;
+        color: #059669;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="rental-container py-8 px-4">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header Section -->
+        <div class="fade-in mb-8">
+            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6">
+                <div>
+                    <h1 class="text-4xl font-bold text-gray-900 mb-2">Rental Management</h1>
+                    <p class="text-gray-600">Manage all your rental agreements with ease</p>
+                </div>
+                <div class="flex space-x-3">
+                    <a href="{% url 'rentals:rental_create' %}" 
+                       class="btn-add text-white font-bold py-3 px-6 rounded-lg flex items-center transition-all duration-300">
+                        <i class="fas fa-plus mr-2"></i>
+                        Add New Rental
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="stats-card p-6 text-white">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-lg font-semibold opacity-90">Total Rentals</h3>
+                            <p class="text-3xl font-bold">{{ total_rentals }}</p>
+                        </div>
+                        <div class="bg-white bg-opacity-20 rounded-full p-4">
+                            <i class="fas fa-file-contract text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="stats-card p-6 text-white" style="background: linear-gradient(135deg, #059669 0%, #047857 100%);">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-lg font-semibold opacity-90">Monthly Revenue</h3>
+                            <p class="text-2xl font-bold">UGX {{ total_monthly_revenue|floatformat:0|default:"0" }}</p>
+                        </div>
+                        <div class="bg-white bg-opacity-20 rounded-full p-4">
+                            <i class="fas fa-money-bill-wave text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="stats-card p-6 text-white" style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-lg font-semibold opacity-90">Properties Rented</h3>
+                            <p class="text-3xl font-bold">{{ unique_properties_count }}</p>
+                        </div>
+                        <div class="bg-white bg-opacity-20 rounded-full p-4">
+                            <i class="fas fa-building text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Messages -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="fade-in mb-6 p-4 rounded-lg {% if message.tags == 'error' %}bg-red-50 border border-red-200 text-red-700{% elif message.tags == 'success' %}bg-green-50 border border-green-200 text-green-700{% else %}bg-blue-50 border border-blue-200 text-blue-700{% endif %} flex items-center">
+                    {% if message.tags == 'error' %}
+                        <i class="fas fa-exclamation-circle mr-3 text-xl"></i>
+                    {% elif message.tags == 'success' %}
+                        <i class="fas fa-check-circle mr-3 text-xl"></i>
+                    {% else %}
+                        <i class="fas fa-info-circle mr-3 text-xl"></i>
+                    {% endif %}
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <!-- Search Section -->
+        <div class="search-container p-6 mb-8 fade-in">
+            <h3 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                <i class="fas fa-search mr-2 text-Unity-Purple"></i>
+                Search Rentals
+            </h3>
+            {% crispy search_form %}
+        </div>
+
+        <!-- Table Section -->
+        <div class="table-container fade-in">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-xl font-semibold text-gray-900 flex items-center">
+                    <i class="fas fa-table mr-2 text-Unity-Purple"></i>
+                    Rentals List
+                    {% if rentals %}
+                        <span class="ml-2 text-sm font-normal text-gray-500">
+                            ({{ total_rentals }} rentals found)
+                        </span>
+                    {% endif %}
+                </h3>
+            </div>
+            
+            {% if rentals %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200 bg-white shadow-lg rounded-lg overflow-hidden">
+                        <thead class="bg-Unity-Purple">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Rental Number</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Property</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Type</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Tenants</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Monthly Rent</th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for rental in rentals %}
+                            <tr class="hover:bg-gray-50 transition-colors duration-200">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-Unity-Purple">
+                                    {{ rental.rental_number }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-medium text-gray-900">{{ rental.property.property_name }}</div>
+                                    <div class="text-sm text-gray-500 max-w-xs truncate" title="{{ rental.property.address }}">
+                                        {{ rental.property.address }}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    {% if rental.rental_type == 'SINGLE_ROOM' %}
+                                        <span class="rental-badge badge-single-room">Single Room</span>
+                                    {% elif rental.rental_type == 'DOUBLE_ROOM' %}
+                                        <span class="rental-badge badge-double-room">Double Room</span>
+                                    {% elif rental.rental_type == 'SHOP' %}
+                                        <span class="rental-badge badge-shop">Shop</span>
+                                    {% elif rental.rental_type == 'APARTMENT' %}
+                                        <span class="rental-badge badge-apartment">Apartment</span>
+                                    {% elif rental.rental_type == 'HOUSE' %}
+                                        <span class="rental-badge badge-house">House</span>
+                                    {% elif rental.rental_type == 'STUDIO' %}
+                                        <span class="rental-badge badge-studio">Studio</span>
+                                    {% else %}
+                                        <span class="rental-badge" style="background-color: #f3f4f6; color: #374151;">{{ rental.get_rental_type_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    {% with rental.rental_tenants.all as tenants %}
+                                        {% if tenants %}
+                                            <div class="space-y-1">
+                                                {% for tenant in tenants %}
+                                                    <div class="flex items-center">
+                                                        <div class="flex-shrink-0 h-6 w-6">
+                                                            <div class="h-6 w-6 rounded-full bg-Unity-Purple flex items-center justify-center">
+                                                                <span class="text-white font-semibold text-xs">{{ tenant.name|first|upper }}</span>
+                                                            </div>
+                                                        </div>
+                                                        <div class="ml-2">
+                                                            <div class="text-xs font-medium text-gray-900">{{ tenant.name }}</div>
+                                                            <div class="text-xs text-gray-500">{{ tenant.email }}</div>
+                                                        </div>
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                        {% else %}
+                                            <div class="text-sm text-gray-400 italic">
+                                                <i class="fas fa-user-slash mr-1"></i>
+                                                No tenants assigned
+                                            </div>
+                                        {% endif %}
+                                    {% endwith %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="currency-amount text-lg">
+                                        UGX {{ rental.monthly_rent_amount|floatformat:0 }}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-center">
+                                    <div class="flex space-x-1 justify-center">
+                                        <!-- View Button -->
+                                        <button type="button" 
+                                                class="inline-flex items-center px-2 py-1 text-xs font-medium rounded text-white bg-blue-600 hover:bg-blue-700 transition-all duration-200 transform hover:scale-105"
+                                                onclick="openViewModal('{{ rental.pk }}', '{{ rental.rental_number|escapejs }}', '{{ rental.property.property_name|escapejs }}', '{{ rental.get_rental_type_display|escapejs }}', '{{ rental.monthly_rent_amount|floatformat:0 }}', '{{ rental.property.address|escapejs }}')"
+                                                title="View Rental">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        
+                                        <!-- Edit Button -->
+                                        <a href="{% url 'rentals:rental_edit' rental.pk %}"
+                                           class="inline-flex items-center px-2 py-1 text-xs font-medium rounded text-white bg-Unity-Purple hover:bg-Unity-purple2 transition-all duration-200 transform hover:scale-105"
+                                           title="Edit Rental">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        
+                                        <!-- Delete Button -->
+                                        <button type="button" 
+                                                class="inline-flex items-center px-2 py-1 text-xs font-medium rounded text-white bg-red-600 hover:bg-red-700 transition-all duration-200 transform hover:scale-105"
+                                                onclick="openDeleteModal('{{ rental.pk }}', '{{ rental.rental_number|escapejs }}')"
+                                                title="Delete Rental">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Custom Pagination -->
+                {% if rentals.has_other_pages %}
+                    <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
+                        <div class="flex flex-col sm:flex-row justify-between items-center">
+                            <div class="text-sm text-gray-700 mb-4 sm:mb-0">
+                                Showing {{ rentals.start_index }} to {{ rentals.end_index }} of {{ rentals.paginator.count }} rentals
+                            </div>
+                            <div class="pagination-container">
+                                <nav aria-label="Page navigation">
+                                    <ul class="flex space-x-1">
+                                        {% if rentals.has_previous %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="?page={{ rentals.previous_page_number }}{% if search_form.search.value %}&search={{ search_form.search.value }}{% endif %}">
+                                                    <i class="fas fa-chevron-left"></i>
+                                                </a>
+                                            </li>
+                                        {% endif %}
+                                        
+                                        {% for num in rentals.paginator.page_range %}
+                                            {% if num == rentals.number %}
+                                                <li class="page-item active">
+                                                    <span class="page-link bg-Unity-Purple text-white">{{ num }}</span>
+                                                </li>
+                                            {% elif num > rentals.number|add:'-3' and num < rentals.number|add:'3' %}
+                                                <li class="page-item">
+                                                    <a class="page-link" href="?page={{ num }}{% if search_form.search.value %}&search={{ search_form.search.value }}{% endif %}">{{ num }}</a>
+                                                </li>
+                                            {% endif %}
+                                        {% endfor %}
+                                        
+                                        {% if rentals.has_next %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="?page={{ rentals.next_page_number }}{% if search_form.search.value %}&search={{ search_form.search.value }}{% endif %}">
+                                                    <i class="fas fa-chevron-right"></i>
+                                                </a>
+                                            </li>
+                                        {% endif %}
+                                    </ul>
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            {% else %}
+                <!-- Empty State -->
+                <div class="text-center py-16">
+                    <div class="inline-flex items-center justify-center w-20 h-20 bg-gray-100 rounded-full mb-6">
+                        <i class="fas fa-file-contract text-gray-400 text-3xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-semibold text-gray-900 mb-3">No Rentals Found</h3>
+                    <p class="text-gray-600 mb-8 max-w-md mx-auto">
+                        {% if search_form.search.value %}
+                            No rentals match your search criteria. Try adjusting your search terms.
+                        {% else %}
+                            You haven't created any rental agreements yet. Start by adding your first rental to get started.
+                        {% endif %}
+                    </p>
+                    <div class="space-x-4">
+                        <a href="{% url 'rentals:rental_create' %}" 
+                           class="btn-add text-white font-bold py-3 px-6 rounded-lg inline-flex items-center transition-all duration-300">
+                            <i class="fas fa-plus mr-2"></i>
+                            Create Your First Rental
+                        </a>
+                        {% if search_form.search.value %}
+                            <a href="{% url 'rentals:rental_list' %}" 
+                               class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg inline-flex items-center transition-all duration-300">
+                                <i class="fas fa-times mr-2"></i>
+                                Clear Search
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- View Modal -->
+<div id="viewModal" class="fixed inset-0 modal-overlay hidden z-50 flex items-center justify-center">
+    <div class="modal-content bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                <i class="fas fa-eye mr-2 text-blue-600"></i>
+                Rental Details
+            </h3>
+        </div>
+        <div class="px-6 py-4">
+            <div class="space-y-3">
+                <div>
+                    <label class="text-sm font-medium text-gray-500">Rental Number</label>
+                    <p id="viewRentalNumber" class="text-lg font-bold text-Unity-Purple"></p>
+                </div>
+                <div>
+                    <label class="text-sm font-medium text-gray-500">Property</label>
+                    <p id="viewPropertyName" class="text-gray-900 font-medium"></p>
+                    <p id="viewPropertyAddress" class="text-sm text-gray-500"></p>
+                </div>
+                <div>
+                    <label class="text-sm font-medium text-gray-500">Rental Type</label>
+                    <p id="viewRentalType" class="text-gray-900"></p>
+                </div>
+                <div>
+                    <label class="text-sm font-medium text-gray-500">Monthly Rent</label>
+                    <p id="viewMonthlyRent" class="text-xl font-bold text-green-600"></p>
+                </div>
+            </div>
+        </div>
+        <div class="px-6 py-4 border-t border-gray-200 flex justify-end">
+            <button type="button" onclick="closeViewModal()" 
+                    class="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition duration-200">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div id="deleteModal" class="fixed inset-0 modal-overlay hidden z-50 flex items-center justify-center">
+    <div class="modal-content bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                <i class="fas fa-exclamation-triangle mr-2 text-red-600"></i>
+                Confirm Deletion
+            </h3>
+        </div>
+        <div class="px-6 py-4">
+            <p class="text-gray-700">
+                Are you sure you want to delete rental <strong id="deleteRentalNumber"></strong>?
+            </p>
+            <p class="text-sm text-red-600 mt-2">This action cannot be undone.</p>
+        </div>
+        <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+            <button type="button" onclick="closeDeleteModal()" 
+                    class="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition duration-200">
+                Cancel
+            </button>
+            <form id="deleteForm" method="post" class="inline">
+                {% csrf_token %}
+                <button type="submit" 
+                        class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200">
+                    Delete Rental
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // View Modal Functions
+    function openViewModal(id, rentalNumber, propertyName, rentalType, monthlyRent, propertyAddress) {
+        document.getElementById('viewRentalNumber').textContent = rentalNumber;
+        document.getElementById('viewPropertyName').textContent = propertyName;
+        document.getElementById('viewPropertyAddress').textContent = propertyAddress;
+        document.getElementById('viewRentalType').textContent = rentalType;
+        document.getElementById('viewMonthlyRent').textContent = 'UGX ' + parseInt(monthlyRent).toLocaleString();
+        document.getElementById('viewModal').classList.remove('hidden');
+    }
+
+    function closeViewModal() {
+        document.getElementById('viewModal').classList.add('hidden');
+    }
+
+    // Delete Modal Functions
+    function openDeleteModal(id, rentalNumber) {
+        document.getElementById('deleteRentalNumber').textContent = rentalNumber;
+        document.getElementById('deleteForm').action = `/rentals/${id}/delete/`;
+        document.getElementById('deleteModal').classList.remove('hidden');
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').classList.add('hidden');
+    }
+
+    // Close modals when clicking outside
+    document.addEventListener('click', function(event) {
+        const viewModal = document.getElementById('viewModal');
+        const deleteModal = document.getElementById('deleteModal');
+        
+        if (event.target === viewModal) {
+            closeViewModal();
+        }
+        if (event.target === deleteModal) {
+            closeDeleteModal();
+        }
+    });
+
+    // Close modals with Escape key
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            closeViewModal();
+            closeDeleteModal();
+        }
+    });
+
+    // Add fade-in animation on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        const elements = document.querySelectorAll('.fade-in');
+        elements.forEach((el, index) => {
+            setTimeout(() => {
+                el.style.opacity = '1';
+                el.style.transform = 'translateY(0)';
+            }, index * 100);
+        });
+    });
+</script>
+{% endblock %}

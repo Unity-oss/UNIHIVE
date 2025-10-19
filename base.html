@@ -1,0 +1,285 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{% block description %}MWF - UNIHIVE Rental Management System{% endblock %}">
+    <meta name="author" content="UNIHIVE">
+    <title>{% block title %}MWF - UNIHIVE{% endblock %}</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{% static 'property.png' %}">
+    
+    <!-- External CSS Libraries -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Tailwind CSS Framework -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      // Custom Tailwind configuration for Unihive brand colors
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              "Unity-Purple": "#7400B8",    // Darkest
+              "Unity-purple2": "#8013BD",    
+              "Unity-Purple3": "#8B26C3",    
+              "Unity-purple4": "#9739C8", 
+              "Unity-Purple5": "#A24CCD",    
+              "Unity-purple6": "#AE60D3", 
+              "Unity-Purple7": "#B973D8",    
+              "Unity-purple8": "#C586DD", 
+              "Unity-Purple9": "#D099E3",    
+              "Unity-purple10": "#DCACE8", // lightest
+            },
+          },
+        },
+      };
+    </script>
+    
+    <!-- Navigation Styles -->
+    <style>
+      .rotate-180 {
+        transform: rotate(180deg);
+      }
+      
+      /* Smooth transitions for dropdown animations */
+      .transition-transform {
+        transition: transform 0.2s ease-in-out;
+      }
+      
+      /* Ensure dropdowns stay above other elements */
+      .group:hover .group-hover\:opacity-100 {
+        z-index: 1000;
+      }
+    </style>
+    
+    <!-- Additional head content from child templates -->
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col{% if user.is_authenticated %} authenticated{% endif %}">
+ <!-- Main Header with Navigation -->
+ <header class="bg-Unity-Purple text-white px-6 py-4">
+  <div class="flex justify-between items-center flex-wrap">
+    <!-- Company Logo and Branding -->
+    <div class="logo">
+      <h1 class="text-xl font-bold">UNIHIVE</h1>
+    </div>
+    
+    <!-- Navigation Menu -->
+    <nav class="hidden lg:flex space-x-8">
+      <!-- Properties Dropdown -->
+      <div class="relative group">
+        <button class="flex items-center space-x-1 px-3 py-2 rounded-md hover:bg-Unity-purple2 transition-colors duration-200">
+          <i class="fas fa-building"></i>
+          <span>Properties</span>
+          <i class="fas fa-chevron-down text-xs"></i>
+        </button>
+        <div class="absolute top-full left-0 mt-1 w-48 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+          <div class="py-2">
+            <a href="{% url 'properties:add_property' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-Unity-Purple">
+              <i class="fas fa-plus mr-2"></i>Add Property
+            </a>
+            <a href="{% url 'properties:property_list' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-Unity-Purple">
+              <i class="fas fa-list mr-2"></i>All Properties
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rentals Dropdown -->
+      <div class="relative group">
+        <button class="flex items-center space-x-1 px-3 py-2 rounded-md hover:bg-Unity-purple2 transition-colors duration-200">
+          <i class="fas fa-home"></i>
+          <span>Rentals</span>
+          <i class="fas fa-chevron-down text-xs"></i>
+        </button>
+        <div class="absolute top-full left-0 mt-1 w-48 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+          <div class="py-2">
+            <a href="{% url 'rentals:rental_create' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-Unity-Purple">
+              <i class="fas fa-plus mr-2"></i>Add Rental
+            </a>
+            <a href="{% url 'rentals:rental_list' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-Unity-Purple">
+              <i class="fas fa-list mr-2"></i>All Rentals
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tenants Dropdown -->
+      <div class="relative group">
+        <button class="flex items-center space-x-1 px-3 py-2 rounded-md hover:bg-Unity-purple2 transition-colors duration-200">
+          <i class="fas fa-users"></i>
+          <span>Tenants</span>
+          <i class="fas fa-chevron-down text-xs"></i>
+        </button>
+        <div class="absolute top-full left-0 mt-1 w-48 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+          <div class="py-2">
+            <a href="{% url 'tenants:tenant_create' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-Unity-Purple">
+              <i class="fas fa-plus mr-2"></i>Add Tenant
+            </a>
+            <a href="{% url 'tenants:tenant_list' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-Unity-Purple">
+              <i class="fas fa-list mr-2"></i>All Tenants
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Payments Dropdown -->
+      <div class="relative group">
+        <button class="flex items-center space-x-1 px-3 py-2 rounded-md hover:bg-Unity-purple2 transition-colors duration-200">
+          <i class="fas fa-money-bill-wave"></i>
+          <span>Payments</span>
+          <i class="fas fa-chevron-down text-xs"></i>
+        </button>
+        <div class="absolute top-full left-0 mt-1 w-48 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+          <div class="py-2">
+            <a href="{% url 'payments:add_payment' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-Unity-Purple">
+              <i class="fas fa-plus mr-2"></i>Add Payment
+            </a>
+            <a href="{% url 'payments:payment_list' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-Unity-Purple">
+              <i class="fas fa-list mr-2"></i>All Payments
+            </a>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Mobile Menu Button -->
+    <div class="lg:hidden">
+      <button id="mobile-menu-button" class="text-white hover:text-Unity-purple10 focus:outline-none">
+        <i class="fas fa-bars text-xl"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Mobile Navigation Menu -->
+  <div id="mobile-menu" class="lg:hidden mt-4 pb-4 hidden">
+    <div class="space-y-2">
+      <!-- Properties Mobile -->
+      <div>
+        <button class="mobile-dropdown-toggle w-full text-left px-3 py-2 rounded-md hover:bg-Unity-purple2 flex items-center justify-between">
+          <span><i class="fas fa-building mr-2"></i>Properties</span>
+          <i class="fas fa-chevron-down text-xs transition-transform duration-200"></i>
+        </button>
+        <div class="mobile-dropdown-menu hidden pl-6 mt-1 space-y-1">
+          <a href="{% url 'properties:add_property' %}" class="block px-3 py-2 text-sm hover:bg-Unity-purple2 rounded-md">
+            <i class="fas fa-plus mr-2"></i>Add Property
+          </a>
+          <a href="{% url 'properties:property_list' %}" class="block px-3 py-2 text-sm hover:bg-Unity-purple2 rounded-md">
+            <i class="fas fa-list mr-2"></i>All Properties
+          </a>
+        </div>
+      </div>
+
+      <!-- Rentals Mobile -->
+      <div>
+        <button class="mobile-dropdown-toggle w-full text-left px-3 py-2 rounded-md hover:bg-Unity-purple2 flex items-center justify-between">
+          <span><i class="fas fa-home mr-2"></i>Rentals</span>
+          <i class="fas fa-chevron-down text-xs transition-transform duration-200"></i>
+        </button>
+        <div class="mobile-dropdown-menu hidden pl-6 mt-1 space-y-1">
+          <a href="{% url 'rentals:rental_create' %}" class="block px-3 py-2 text-sm hover:bg-Unity-purple2 rounded-md">
+            <i class="fas fa-plus mr-2"></i>Add Rental
+          </a>
+          <a href="{% url 'rentals:rental_list' %}" class="block px-3 py-2 text-sm hover:bg-Unity-purple2 rounded-md">
+            <i class="fas fa-list mr-2"></i>All Rentals
+          </a>
+        </div>
+      </div>
+
+      <!-- Tenants Mobile -->
+      <div>
+        <button class="mobile-dropdown-toggle w-full text-left px-3 py-2 rounded-md hover:bg-Unity-purple2 flex items-center justify-between">
+          <span><i class="fas fa-users mr-2"></i>Tenants</span>
+          <i class="fas fa-chevron-down text-xs transition-transform duration-200"></i>
+        </button>
+        <div class="mobile-dropdown-menu hidden pl-6 mt-1 space-y-1">
+          <a href="{% url 'tenants:tenant_create' %}" class="block px-3 py-2 text-sm hover:bg-Unity-purple2 rounded-md">
+            <i class="fas fa-plus mr-2"></i>Add Tenant
+          </a>
+          <a href="{% url 'tenants:tenant_list' %}" class="block px-3 py-2 text-sm hover:bg-Unity-purple2 rounded-md">
+            <i class="fas fa-list mr-2"></i>All Tenants
+          </a>
+        </div>
+      </div>
+
+      <!-- Payments Mobile -->
+      <div>
+        <button class="mobile-dropdown-toggle w-full text-left px-3 py-2 rounded-md hover:bg-Unity-purple2 flex items-center justify-between">
+          <span><i class="fas fa-money-bill-wave mr-2"></i>Payments</span>
+          <i class="fas fa-chevron-down text-xs transition-transform duration-200"></i>
+        </button>
+        <div class="mobile-dropdown-menu hidden pl-6 mt-1 space-y-1">
+          <a href="{% url 'payments:add_payment' %}" class="block px-3 py-2 text-sm hover:bg-Unity-purple2 rounded-md">
+            <i class="fas fa-plus mr-2"></i>Add Payment
+          </a>
+          <a href="{% url 'payments:payment_list' %}" class="block px-3 py-2 text-sm hover:bg-Unity-purple2 rounded-md">
+            <i class="fas fa-list mr-2"></i>All Payments
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+ </header>
+
+ <!-- Main Content Area -->
+ <main class="flex-1">
+   {% block content %}
+   <!-- Page content will be inserted here -->
+   {% endblock %}
+ </main>
+
+ <!-- Footer (Optional) -->
+ <footer class="bg-gray-800 text-white text-center py-4 mt-auto">
+   <p>&copy; 2025 UNIHIVE - Rental Management System</p>
+   <p>Designed by UNITY</p>
+ </footer>
+
+ <!-- JavaScript -->
+ <script>
+   // Mobile Menu Toggle
+   document.addEventListener('DOMContentLoaded', function() {
+     const mobileMenuButton = document.getElementById('mobile-menu-button');
+     const mobileMenu = document.getElementById('mobile-menu');
+     const mobileDropdownToggles = document.querySelectorAll('.mobile-dropdown-toggle');
+
+     // Toggle mobile menu
+     if (mobileMenuButton) {
+       mobileMenuButton.addEventListener('click', function() {
+         mobileMenu.classList.toggle('hidden');
+         
+         // Toggle icon
+         const icon = this.querySelector('i');
+         if (mobileMenu.classList.contains('hidden')) {
+           icon.className = 'fas fa-bars text-xl';
+         } else {
+           icon.className = 'fas fa-times text-xl';
+         }
+       });
+     }
+
+     // Handle mobile dropdown toggles
+     mobileDropdownToggles.forEach(function(toggle) {
+       toggle.addEventListener('click', function() {
+         const menu = this.nextElementSibling;
+         const chevron = this.querySelector('.fa-chevron-down');
+         
+         menu.classList.toggle('hidden');
+         chevron.classList.toggle('rotate-180');
+       });
+     });
+
+     // Close mobile menu when clicking outside
+     document.addEventListener('click', function(event) {
+       if (!event.target.closest('header') && !mobileMenu.classList.contains('hidden')) {
+         mobileMenu.classList.add('hidden');
+         const icon = mobileMenuButton.querySelector('i');
+         icon.className = 'fas fa-bars text-xl';
+       }
+     });
+   });
+ </script>
+ {% block extra_js %}{% endblock %}
+</body>
+</html>

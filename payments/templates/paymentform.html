@@ -1,0 +1,386 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% if is_edit %}Edit Payment{% else %}Add Payment{% endif %} - MWF UNIHIVE{% endblock %}
+
+{% block description %}{% if is_edit %}Update payment information in the UNIHIVE rental management system{% else %}Add a new payment to the UNIHIVE rental management system{% endif %}{% endblock %}
+
+{% block extra_head %}
+<style>
+    .form-container {
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        min-height: calc(100vh - 200px);
+    }
+    
+    .form-card {
+        background: white;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        border: 1px solid #e2e8f0;
+    }
+    
+    .form-header {
+        background: linear-gradient(135deg, #7400B8 0%, #9739C8 100%);
+    }
+    
+    .input-focus:focus {
+        border-color: #9739C8;
+        box-shadow: 0 0 0 3px rgba(151, 57, 200, 0.1);
+    }
+    
+    .btn-unity {
+        background: linear-gradient(135deg, #7400B8 0%, #9739C8 100%);
+        transition: all 0.3s ease;
+    }
+    
+    .btn-unity:hover {
+        background: linear-gradient(135deg, #8013BD 0%, #A24CCD 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 10px 20px rgba(116, 0, 184, 0.3);
+    }
+    
+    .form-label {
+        color: #374151;
+        font-weight: 600;
+    }
+    
+    .required-field::after {
+        content: " *";
+        color: #ef4444;
+    }
+    
+    .readonly-field {
+        background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+        border: 1px solid #10b981;
+        padding: 12px 16px;
+        border-radius: 8px;
+        color: #065f46;
+        font-weight: 600;
+        position: relative;
+        display: flex;
+        align-items: center;
+        min-height: 48px;
+    }
+    
+    .calculated-badge {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        font-size: 0.75rem;
+        padding: 4px 8px;
+        border-radius: 12px;
+        position: absolute;
+        top: -8px;
+        right: 12px;
+        font-weight: 500;
+    }
+    
+    .fade-in {
+        animation: fadeIn 0.5s ease-out;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .auto-filled {
+        background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%) !important;
+        border-color: #38bdf8 !important;
+        box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.1) !important;
+        transition: all 0.3s ease;
+        cursor: not-allowed !important;
+        position: relative;
+    }
+    
+    .auto-filled::placeholder {
+        color: #0891b2;
+        font-style: italic;
+    }
+    
+    .auto-filled::after {
+        content: '🔒 Auto-filled';
+        position: absolute;
+        top: -8px;
+        right: 8px;
+        background: #0891b2;
+        color: white;
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 8px;
+        font-weight: 500;
+        pointer-events: none;
+    }
+    
+    .disabled-waiting,
+    input:read-only:not(.auto-filled), 
+    select:disabled:not(.auto-filled) {
+        background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%) !important;
+        border-color: #d1d5db !important;
+        color: #6b7280 !important;
+        cursor: not-allowed !important;
+    }
+    
+    .disabled-waiting::placeholder,
+    input:read-only:not(.auto-filled)::placeholder {
+        color: #9ca3af !important;
+        font-style: italic;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-container py-8 px-4">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header Section -->
+        <div class="text-center mb-8 fade-in">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-Unity-Purple rounded-full mb-4">
+                <i class="fas fa-money-bill-wave text-white text-2xl"></i>
+            </div>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">
+                {% if is_edit %}Edit Payment{% else %}Record New Payment{% endif %}
+            </h1>
+            <p class="text-gray-600">
+                {% if is_edit %}
+                    Update the payment details with automatic calculations
+                {% else %}
+                    Record a new payment with tenant and rental auto-linking
+                {% endif %}
+            </p>
+        </div>
+
+        <!-- Form Card -->
+        <div class="form-card rounded-xl overflow-hidden fade-in">
+            <!-- Card Header -->
+            <div class="form-header px-6 py-4">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-money-bill-wave text-white text-lg"></i>
+                    <h2 class="text-xl font-semibold text-white">Payment Information</h2>
+                </div>
+            </div>
+
+            <!-- Form Content -->
+            <div class="p-6">
+                <form method="post" class="space-y-6">
+                    {% csrf_token %}
+                    
+                    <!-- Payment Reference Information -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Tenant Selection -->
+                        <div class="relative">
+                            <label for="{{ form.tenant.id_for_label }}" class="form-label required-field mb-2 block">
+                                {{ form.tenant.label }}
+                            </label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-user text-gray-400"></i>
+                                </div>
+                                {{ form.tenant }}
+                            </div>
+                            {% if form.tenant.errors %}
+                                <div class="mt-1 text-red-600 text-sm">{{ form.tenant.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Rental Selection -->
+                        <div class="relative">
+                            <label for="{{ form.rental.id_for_label }}" class="form-label required-field mb-2 block">
+                                {{ form.rental.label }}
+                            </label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-home text-gray-400"></i>
+                                </div>
+                                {{ form.rental }}
+                            </div>
+                            {% if form.rental.errors %}
+                                <div class="mt-1 text-red-600 text-sm">{{ form.rental.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Payment Amount Information -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Payment Amount -->
+                        <div class="relative">
+                            <label for="{{ form.amount.id_for_label }}" class="form-label required-field mb-2 block">
+                                {{ form.amount.label }}
+                            </label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-money-bill text-gray-400"></i>
+                                </div>
+                                {{ form.amount }}
+                            </div>
+                            {% if form.amount.errors %}
+                                <div class="mt-1 text-red-600 text-sm">{{ form.amount.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Amount Due -->
+                        <div class="relative">
+                            <label for="{{ form.amount_due.id_for_label }}" class="form-label required-field mb-2 block">
+                                {{ form.amount_due.label }}
+                            </label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-receipt text-gray-400"></i>
+                                </div>
+                                {{ form.amount_due }}
+                            </div>
+                            {% if form.amount_due.errors %}
+                                <div class="mt-1 text-red-600 text-sm">{{ form.amount_due.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Payment Details -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Payment Date -->
+                        <div class="relative">
+                            <label for="{{ form.payment_date.id_for_label }}" class="form-label required-field mb-2 block">
+                                {{ form.payment_date.label }}
+                            </label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-calendar text-gray-400"></i>
+                                </div>
+                                {{ form.payment_date }}
+                            </div>
+                            {% if form.payment_date.errors %}
+                                <div class="mt-1 text-red-600 text-sm">{{ form.payment_date.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Payment Method -->
+                        <div class="relative">
+                            <label for="{{ form.payment_method.id_for_label }}" class="form-label required-field mb-2 block">
+                                {{ form.payment_method.label }}
+                            </label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-credit-card text-gray-400"></i>
+                                </div>
+                                {{ form.payment_method }}
+                            </div>
+                            {% if form.payment_method.errors %}
+                                <div class="mt-1 text-red-600 text-sm">{{ form.payment_method.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Payment Summary -->
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <h3 class="text-sm font-medium text-gray-900 mb-2">Payment Summary</h3>
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <span class="text-gray-600">Balance Remaining:</span>
+                                <span id="balance_remaining" class="font-medium text-gray-900">Will calculate automatically</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">Payment Status:</span>
+                                <span id="payment_status" class="font-medium text-gray-900">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="flex flex-col sm:flex-row gap-4 pt-6 border-t border-gray-200">
+                        <button type="submit" 
+                                class="btn-unity text-white font-bold py-3 px-8 rounded-lg inline-flex items-center justify-center transition-all duration-300 flex-1 sm:flex-none">
+                            <i class="fas fa-save mr-2"></i>
+                            {% if is_edit %}Update Payment{% else %}Record Payment{% endif %}
+                        </button>
+                        
+                        <a href="{% url 'payments:payment_list' %}" 
+                           class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-8 rounded-lg inline-flex items-center justify-center transition-all duration-300 flex-1 sm:flex-none">
+                            <i class="fas fa-arrow-left mr-2"></i>
+                            Back to Payments
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Calculate balance and payment status
+    function updatePaymentSummary() {
+        const amountInput = document.getElementById('{{ form.amount.id_for_label }}');
+        const amountDueInput = document.getElementById('{{ form.amount_due.id_for_label }}');
+        const balanceDisplay = document.getElementById('balance_remaining');
+        const statusDisplay = document.getElementById('payment_status');
+        
+        if (amountInput && amountDueInput && balanceDisplay && statusDisplay) {
+            const amount = parseFloat(amountInput.value) || 0;
+            const amountDue = parseFloat(amountDueInput.value) || 0;
+            const balance = amountDue - amount;
+            
+            // Update balance display
+            if (amount && amountDue) {
+                balanceDisplay.textContent = `UGX ${balance.toLocaleString()}`;
+                
+                // Update status
+                if (balance <= 0) {
+                    statusDisplay.textContent = 'Fully Paid';
+                    statusDisplay.className = 'font-medium text-green-600';
+                } else if (amount > 0) {
+                    statusDisplay.textContent = 'Partially Paid';
+                    statusDisplay.className = 'font-medium text-yellow-600';
+                } else {
+                    statusDisplay.textContent = 'Unpaid';
+                    statusDisplay.className = 'font-medium text-red-600';
+                }
+            } else {
+                balanceDisplay.textContent = 'Enter amounts to calculate';
+                statusDisplay.textContent = '-';
+                statusDisplay.className = 'font-medium text-gray-900';
+            }
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Form validation feedback
+        const form = document.querySelector('form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                const submitBtn = form.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
+                    submitBtn.disabled = true;
+                }
+            });
+        }
+
+        // Payment summary calculations
+        const amountInput = document.getElementById('{{ form.amount.id_for_label }}');
+        const amountDueInput = document.getElementById('{{ form.amount_due.id_for_label }}');
+        
+        if (amountInput) {
+            amountInput.addEventListener('input', updatePaymentSummary);
+        }
+        
+        if (amountDueInput) {
+            amountDueInput.addEventListener('input', updatePaymentSummary);
+        }
+        
+        // Initial calculation
+        updatePaymentSummary();
+
+        // Add floating labels effect
+        const inputs = document.querySelectorAll('input, textarea, select');
+        inputs.forEach(input => {
+            input.addEventListener('focus', function() {
+                this.parentElement.classList.add('focused');
+            });
+            
+            input.addEventListener('blur', function() {
+                if (!this.value) {
+                    this.parentElement.classList.remove('focused');
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

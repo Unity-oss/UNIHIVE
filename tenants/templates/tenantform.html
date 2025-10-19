@@ -1,0 +1,755 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% if is_edit %}Edit Tenant{% else %}Add Tenant{% endif %} - MWF UNIHIVE{% endblock %}
+
+{% block description %}{% if is_edit %}Update tenant information in the UNIHIVE rental management system{% else %}Add a new tenant to the UNIHIVE rental management system{% endif %}{% endblock %}
+
+{% block extra_head %}
+<style>
+    .form-container {
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        min-height: calc(100vh - 200px);
+    }
+    
+    .form-card {
+        background: white;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        border: 1px solid #e2e8f0;
+    }
+    
+    .form-header {
+        background: linear-gradient(135deg, #7400B8 0%, #9739C8 100%);
+    }
+    
+    .input-focus:focus {
+        border-color: #9739C8;
+        box-shadow: 0 0 0 3px rgba(151, 57, 200, 0.1);
+    }
+    
+    .btn-unity {
+        background: linear-gradient(135deg, #7400B8 0%, #9739C8 100%);
+        transition: all 0.3s ease;
+    }
+    
+    .btn-unity:hover {
+        background: linear-gradient(135deg, #8013BD 0%, #A24CCD 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 10px 20px rgba(116, 0, 184, 0.3);
+    }
+    
+    .form-label {
+        color: #374151;
+        font-weight: 600;
+    }
+    
+    .required-field::after {
+        content: " *";
+        color: #ef4444;
+    }
+    
+    .readonly-field {
+        background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+        border: 1px solid #10b981;
+        padding: 12px 16px;
+        border-radius: 8px;
+        color: #065f46;
+        font-weight: 600;
+        position: relative;
+        display: flex;
+        align-items: center;
+        min-height: 48px;
+    }
+    
+    .calculated-badge {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        font-size: 0.75rem;
+        padding: 4px 8px;
+        border-radius: 12px;
+        position: absolute;
+        top: -8px;
+        right: 12px;
+        font-weight: 500;
+    }
+    
+    .fade-in {
+        animation: fadeIn 0.5s ease-out;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .auto-filled {
+        background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%) !important;
+        border-color: #38bdf8 !important;
+        box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.1) !important;
+        transition: all 0.3s ease;
+        cursor: not-allowed !important;
+        position: relative;
+    }
+    
+    .auto-filled::placeholder {
+        color: #0891b2;
+        font-style: italic;
+    }
+    
+    .auto-filled::after {
+        content: '🔒 Auto-filled';
+        position: absolute;
+        top: -8px;
+        right: 8px;
+        background: #0891b2;
+        color: white;
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 8px;
+        font-weight: 500;
+        pointer-events: none;
+    }
+    
+    select.auto-filled {
+        background-image: none !important;
+        cursor: not-allowed !important;
+    }
+    
+    /* Style for disabled fields waiting for rental selection */
+    /* Style for disabled fields waiting for rental selection */
+    .disabled-waiting,
+    input:read-only:not(.auto-filled), 
+    select:disabled:not(.auto-filled) {
+        background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%) !important;
+        border-color: #d1d5db !important;
+        color: #6b7280 !important;
+        cursor: not-allowed !important;
+    }
+    
+    .disabled-waiting::placeholder,
+    input:read-only:not(.auto-filled)::placeholder {
+        color: #9ca3af !important;
+        font-style: italic;
+    }
+    
+    .loading-field {
+        opacity: 0.7 !important;
+        pointer-events: none !important;
+        position: relative;
+    }
+    
+    .loading-field::after {
+        content: '';
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 16px;
+        height: 16px;
+        border: 2px solid #e5e7eb;
+        border-top: 2px solid #3b82f6;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        0% { transform: translateY(-50%) rotate(0deg); }
+        100% { transform: translateY(-50%) rotate(360deg); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-container py-8 px-4">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header Section -->
+        <div class="text-center mb-8 fade-in">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-Unity-Purple rounded-full mb-4">
+                <i class="fas fa-user text-white text-2xl"></i>
+            </div>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">
+                {% if is_edit %}Edit Tenant{% else %}Add New Tenant{% endif %}
+            </h1>
+            <p class="text-gray-600">
+                {% if is_edit %}
+                    Update the details for "{{ tenant.name }}" with automatic rent due date calculation
+                {% else %}
+                    Enter the details for a new tenant with automatic rent due date calculation
+                {% endif %}
+            </p>
+        </div>
+
+        <!-- Form Card -->
+        <div class="form-card rounded-xl overflow-hidden fade-in">
+            <!-- Card Header -->
+            <div class="form-header px-6 py-4">
+                <h2 class="text-xl font-semibold text-white flex items-center">
+                    <i class="fas fa-user-plus mr-3"></i>
+                    {% if is_edit %}Edit{% else %}Add{% endif %} Tenant Information
+                </h2>
+            </div>
+
+            <!-- Card Body -->
+            <div class="px-6 py-8">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="mb-6 p-4 rounded-lg {% if message.tags == 'error' %}bg-red-50 border border-red-200 text-red-700{% elif message.tags == 'success' %}bg-green-50 border border-green-200 text-green-700{% else %}bg-blue-50 border border-blue-200 text-blue-700{% endif %}">
+                            <div class="flex items-center">
+                                {% if message.tags == 'error' %}
+                                    <i class="fas fa-exclamation-circle mr-2"></i>
+                                {% elif message.tags == 'success' %}
+                                    <i class="fas fa-check-circle mr-2"></i>
+                                {% else %}
+                                    <i class="fas fa-info-circle mr-2"></i>
+                                {% endif %}
+                                {{ message }}
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <!-- Rent Due Date Info -->
+                <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                    <div class="flex items-center">
+                        <i class="fas fa-calculator text-green-500 mr-2"></i>
+                        <span class="text-green-800 font-medium">Rent due date will be automatically calculated as 3 months from move-in date</span>
+                    </div>
+                </div>
+
+                <form method="post" class="space-y-8" id="tenantForm" novalidate>
+                    {% csrf_token %}
+                    
+                    <!-- Personal Information Section -->
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                            <i class="fas fa-user mr-2 text-Unity-Purple"></i>
+                            Personal Information
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Name Field -->
+                            <div class="space-y-2">
+                                <label for="{{ form.name.id_for_label }}" class="block text-sm form-label required-field">
+                                    {{ form.name.label }}
+                                </label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <i class="fas fa-signature text-gray-400"></i>
+                                    </div>
+                                    {{ form.name }}
+                                </div>
+                                {% if form.name.errors %}
+                                    <div class="text-red-600 text-sm mt-1">
+                                        {% for error in form.name.errors %}
+                                            <p class="flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Email Field -->
+                            <div class="space-y-2">
+                                <label for="{{ form.email.id_for_label }}" class="block text-sm form-label required-field">
+                                    {{ form.email.label }}
+                                </label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <i class="fas fa-envelope text-gray-400"></i>
+                                    </div>
+                                    {{ form.email }}
+                                </div>
+                                {% if form.email.errors %}
+                                    <div class="text-red-600 text-sm mt-1">
+                                        {% for error in form.email.errors %}
+                                            <p class="flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Phone Field -->
+                            <div class="space-y-2">
+                                <label for="{{ form.phone_number.id_for_label }}" class="block text-sm form-label required-field">
+                                    {{ form.phone_number.label }}
+                                </label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <i class="fas fa-phone text-gray-400"></i>
+                                    </div>
+                                    {{ form.phone_number }}
+                                </div>
+                                {% if form.phone_number.errors %}
+                                    <div class="text-red-600 text-sm mt-1">
+                                        {% for error in form.phone_number.errors %}
+                                            <p class="flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- NIN Field -->
+                            <div class="space-y-2">
+                                <label for="{{ form.nin_number.id_for_label }}" class="block text-sm form-label required-field">
+                                    {{ form.nin_number.label }}
+                                </label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <i class="fas fa-id-card text-gray-400"></i>
+                                    </div>
+                                    {{ form.nin_number }}
+                                </div>
+                                {% if form.nin_number.errors %}
+                                    <div class="text-red-600 text-sm mt-1">
+                                        {% for error in form.nin_number.errors %}
+                                            <p class="flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Emergency Contact Section -->
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                            <i class="fas fa-phone-alt mr-2 text-Unity-Purple"></i>
+                            Emergency Contact
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Emergency Contact Name -->
+                            <div class="space-y-2">
+                                <label for="{{ form.emergency_contact_name.id_for_label }}" class="block text-sm form-label required-field">
+                                    {{ form.emergency_contact_name.label }}
+                                </label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <i class="fas fa-user-shield text-gray-400"></i>
+                                    </div>
+                                    {{ form.emergency_contact_name }}
+                                </div>
+                                {% if form.emergency_contact_name.errors %}
+                                    <div class="text-red-600 text-sm mt-1">
+                                        {% for error in form.emergency_contact_name.errors %}
+                                            <p class="flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Emergency Contact Phone -->
+                            <div class="space-y-2">
+                                <label for="{{ form.emergency_contact_phone.id_for_label }}" class="block text-sm form-label required-field">
+                                    {{ form.emergency_contact_phone.label }}
+                                </label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <i class="fas fa-phone text-gray-400"></i>
+                                    </div>
+                                    {{ form.emergency_contact_phone }}
+                                </div>
+                                {% if form.emergency_contact_phone.errors %}
+                                    <div class="text-red-600 text-sm mt-1">
+                                        {% for error in form.emergency_contact_phone.errors %}
+                                            <p class="flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Rental Information Section -->
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                            <i class="fas fa-home mr-2 text-Unity-Purple"></i>
+                            Rental Information
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Rental -->
+                            <div class="space-y-2">
+                                <label for="{{ form.rental.id_for_label }}" class="block text-sm form-label required-field">
+                                    {{ form.rental.label }}
+                                </label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <i class="fas fa-file-contract text-gray-400"></i>
+                                    </div>
+                                    {{ form.rental }}
+                                </div>
+                                {% if form.rental.errors %}
+                                    <div class="text-red-600 text-sm mt-1">
+                                        {% for error in form.rental.errors %}
+                                            <p class="flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Property -->
+                            <div class="space-y-2">
+                                <label for="{{ form.tenant_property.id_for_label }}" class="block text-sm form-label required-field">
+                                    {{ form.tenant_property.label }}
+                                </label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <i class="fas fa-building text-gray-400"></i>
+                                    </div>
+                                    {{ form.tenant_property }}
+                                </div>
+                                {% if form.tenant_property.errors %}
+                                    <div class="text-red-600 text-sm mt-1">
+                                        {% for error in form.tenant_property.errors %}
+                                            <p class="flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Move-in Date -->
+                            <div class="space-y-2">
+                                <label for="{{ form.move_in_date.id_for_label }}" class="block text-sm form-label required-field">
+                                    {{ form.move_in_date.label }}
+                                </label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <i class="fas fa-calendar-plus text-gray-400"></i>
+                                    </div>
+                                    {{ form.move_in_date }}
+                                </div>
+                                {% if form.move_in_date.errors %}
+                                    <div class="text-red-600 text-sm mt-1">
+                                        {% for error in form.move_in_date.errors %}
+                                            <p class="flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Rent Due Date (Auto-calculated) -->
+                            <div class="space-y-2">
+                                <label class="block text-sm form-label">
+                                    <i class="fas fa-calculator mr-1"></i>Rent Due Date (Auto-calculated)
+                                </label>
+                                <div id="rent_due_date_display" class="readonly-field">
+                                    <span class="calculated-badge">Auto</span>
+                                    {% if is_edit and tenant.rent_due_date %}
+                                        {{ tenant.rent_due_date|date:"F d, Y" }}
+                                    {% else %}
+                                        Select move-in date to calculate rent due date
+                                    {% endif %}
+                                </div>
+                                <p class="text-sm text-gray-500">Automatically calculated as 3 months from move-in date</p>
+                            </div>
+
+                            <!-- Rent Amount -->
+                            <div class="space-y-2 md:col-span-2">
+                                <label for="{{ form.rent_amount.id_for_label }}" class="block text-sm form-label required-field">
+                                    {{ form.rent_amount.label }}
+                                </label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <i class="fas fa-money-bill-wave text-gray-400"></i>
+                                    </div>
+                                    {{ form.rent_amount }}
+                                </div>
+                                {% if form.rent_amount.errors %}
+                                    <div class="text-red-600 text-sm mt-1">
+                                        {% for error in form.rent_amount.errors %}
+                                            <p class="flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="flex flex-col sm:flex-row gap-4 pt-6">
+                        <button type="submit" class="btn-unity flex-1 text-white font-semibold py-3 px-6 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-save mr-2"></i>
+                            {% if is_edit %}Update Tenant{% else %}Save Tenant{% endif %}
+                        </button>
+                        <a href="{% url 'tenants:tenant_list' %}" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-lg flex items-center justify-center transition duration-200">
+                            <i class="fas fa-times mr-2"></i>
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function calculateRentDueDate(moveInDate) {
+        if (!moveInDate) {
+            return 'Select move-in date to calculate rent due date';
+        }
+        
+        const date = new Date(moveInDate);
+        if (isNaN(date.getTime())) {
+            return 'Invalid date';
+        }
+        
+        // Add 3 months to the move-in date
+        const dueDate = new Date(date);
+        dueDate.setMonth(dueDate.getMonth() + 3);
+        
+        // Handle edge cases where the day doesn't exist in the target month
+        if (dueDate.getDate() !== date.getDate()) {
+            // Set to the last day of the target month
+            dueDate.setDate(0);
+        }
+        
+        // Format the date nicely
+        const options = { year: 'numeric', month: 'long', day: 'numeric' };
+        return dueDate.toLocaleDateString('en-US', options);
+    }
+    
+    function updateRentDueDate() {
+        const moveInDateInput = document.getElementById('{{ form.move_in_date.id_for_label }}');
+        const rentDueDateDisplay = document.getElementById('rent_due_date_display');
+        
+        if (moveInDateInput && rentDueDateDisplay) {
+            const moveInDate = moveInDateInput.value;
+            const calculatedDate = calculateRentDueDate(moveInDate);
+            
+            if (moveInDate && calculatedDate !== 'Invalid date' && calculatedDate !== 'Select move-in date to calculate rent due date') {
+                rentDueDateDisplay.innerHTML = '<span class="calculated-badge">Auto</span>' + calculatedDate;
+            } else {
+                rentDueDateDisplay.innerHTML = '<span class="calculated-badge">Auto</span>' + calculatedDate;
+            }
+        }
+    }
+    
+    // Auto-update property and rent amount when rental is selected
+    function updateFormFromRental(rentalId) {
+        const propertySelect = document.getElementById('{{ form.tenant_property.id_for_label }}');
+        const rentAmountInput = document.getElementById('{{ form.rent_amount.id_for_label }}');
+        
+        if (!rentalId) {
+            // Reset to initial disabled state when no rental is selected
+            if (propertySelect) {
+                propertySelect.value = '';
+                propertySelect.disabled = false; // Keep enabled for form validation
+                propertySelect.style.pointerEvents = 'none'; // But disable visually
+                propertySelect.classList.remove('auto-filled');
+                propertySelect.classList.add('disabled-waiting');
+                
+                // Remove hidden input if it exists
+                const hiddenPropertyInput = document.getElementById('hidden_tenant_property');
+                if (hiddenPropertyInput) {
+                    hiddenPropertyInput.remove();
+                }
+                
+                // Reset to original placeholder
+                const emptyOption = propertySelect.querySelector('option[value=""]');
+                if (emptyOption) {
+                    emptyOption.textContent = 'Will auto-fill when rental is selected';
+                }
+            }
+            
+            if (rentAmountInput) {
+                rentAmountInput.value = '';
+                rentAmountInput.readOnly = true;
+                rentAmountInput.classList.remove('auto-filled');
+                rentAmountInput.classList.add('disabled-waiting');
+                rentAmountInput.title = '';
+                rentAmountInput.placeholder = 'Will auto-fill when rental is selected';
+            }
+            return;
+        }
+        
+        // Show loading state
+        if (propertySelect) {
+            propertySelect.style.opacity = '0.7';
+            propertySelect.style.pointerEvents = 'none';
+        }
+        
+        if (rentAmountInput) {
+            rentAmountInput.style.opacity = '0.7';
+            rentAmountInput.value = 'Loading...';
+            rentAmountInput.readOnly = true;
+        }
+        
+        // Fetch rental details
+        fetch(`/tenants/api/rental/${rentalId}/`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Update property field - make it read-only when auto-filled but keep enabled for form submission
+                if (propertySelect && data.property_id) {
+                    propertySelect.value = data.property_id;
+                    propertySelect.style.opacity = '1';
+                    propertySelect.style.pointerEvents = 'none'; // Disable interaction visually
+                    propertySelect.disabled = false; // Keep enabled for form submission
+                    propertySelect.classList.add('auto-filled');
+                    
+                    // Add hidden input to ensure value gets submitted
+                    let hiddenPropertyInput = document.getElementById('hidden_tenant_property');
+                    if (!hiddenPropertyInput) {
+                        hiddenPropertyInput = document.createElement('input');
+                        hiddenPropertyInput.type = 'hidden';
+                        hiddenPropertyInput.id = 'hidden_tenant_property';
+                        hiddenPropertyInput.name = 'tenant_property';
+                        propertySelect.parentNode.appendChild(hiddenPropertyInput);
+                    }
+                    hiddenPropertyInput.value = data.property_id;
+                }
+                
+                // Update rent amount field - make it read-only when auto-filled
+                if (rentAmountInput && data.monthly_rent_amount) {
+                    rentAmountInput.value = data.monthly_rent_amount;
+                    rentAmountInput.style.opacity = '1';
+                    rentAmountInput.readOnly = true; // Make it truly read-only
+                    rentAmountInput.classList.add('auto-filled');
+                    
+                    // Add a visual indicator that it's auto-filled and read-only
+                    rentAmountInput.title = 'This amount is automatically set based on the selected rental';
+                    rentAmountInput.placeholder = 'Auto-filled from rental';
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching rental details:', error);
+                
+                // Reset loading state on error and re-enable fields
+                if (propertySelect) {
+                    propertySelect.style.opacity = '1';
+                    propertySelect.style.pointerEvents = 'auto';
+                    propertySelect.disabled = false;
+                    propertySelect.classList.remove('auto-filled');
+                }
+                
+                if (rentAmountInput) {
+                    rentAmountInput.style.opacity = '1';
+                    rentAmountInput.value = '';
+                    rentAmountInput.readOnly = false;
+                    rentAmountInput.classList.remove('auto-filled');
+                    rentAmountInput.placeholder = 'Error loading rent amount - please enter manually';
+                    rentAmountInput.title = '';
+                }
+            });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Form validation feedback and ensure auto-filled values are submitted
+        const form = document.querySelector('form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                // Ensure auto-filled property value is included in submission
+                if (propertySelect && propertySelect.classList.contains('auto-filled')) {
+                    // Temporarily enable the field for submission
+                    propertySelect.disabled = false;
+                }
+                
+                // Validate that required fields are filled
+                if (!propertySelect.value || !rentAmountInput.value) {
+                    e.preventDefault();
+                    alert('Please select a rental first to auto-fill property and rent amount.');
+                    return false;
+                }
+                
+                const submitBtn = form.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
+                    submitBtn.disabled = true;
+                }
+            });
+        }
+
+        // Initialize form fields to proper initial state
+        const propertySelect = document.getElementById('{{ form.tenant_property.id_for_label }}');
+        const rentAmountInput = document.getElementById('{{ form.rent_amount.id_for_label }}');
+        
+        // Set initial state - disabled until rental is selected
+        if (propertySelect) {
+            propertySelect.disabled = false; // Keep enabled for form validation
+            propertySelect.style.pointerEvents = 'none'; // But disable visually
+            propertySelect.classList.add('disabled-waiting');
+        }
+        
+        if (rentAmountInput) {
+            rentAmountInput.readOnly = true;
+            rentAmountInput.classList.add('disabled-waiting');
+            rentAmountInput.placeholder = 'Will auto-fill when rental is selected';
+        }
+
+        // Rental auto-update functionality
+        const rentalSelect = document.getElementById('{{ form.rental.id_for_label }}');
+        if (rentalSelect) {
+            rentalSelect.addEventListener('change', function() {
+                const rentalId = this.value;
+                updateFormFromRental(rentalId);
+            });
+            
+            // Check if there's already a selected rental on page load (for edit mode)
+            if (rentalSelect.value) {
+                updateFormFromRental(rentalSelect.value);
+            } else {
+                // Ensure proper initial state when no rental is selected
+                updateFormFromRental('');
+            }
+        }
+
+        // Rent due date calculation
+        const moveInDateInput = document.getElementById('{{ form.move_in_date.id_for_label }}');
+        if (moveInDateInput) {
+            moveInDateInput.addEventListener('change', updateRentDueDate);
+            moveInDateInput.addEventListener('input', updateRentDueDate);
+            updateRentDueDate(); // Initial calculation
+        }
+
+        // Add floating labels effect
+        const inputs = document.querySelectorAll('input, textarea, select');
+        inputs.forEach(input => {
+            input.addEventListener('focus', function() {
+                this.parentElement.classList.add('focused');
+            });
+            
+            input.addEventListener('blur', function() {
+                if (!this.value) {
+                    this.parentElement.classList.remove('focused');
+                }
+            });
+        });
+        
+        // Prevent manual editing of auto-filled fields
+        document.addEventListener('keydown', function(e) {
+            const target = e.target;
+            if (target.classList.contains('auto-filled') && target.readOnly) {
+                // Prevent all keyboard input for read-only auto-filled fields
+                e.preventDefault();
+                return false;
+            }
+        });
+        
+        // Prevent pasting in auto-filled fields
+        document.addEventListener('paste', function(e) {
+            const target = e.target;
+            if (target.classList.contains('auto-filled') && target.readOnly) {
+                e.preventDefault();
+                return false;
+            }
+        });
+        
+        // Show helpful message when trying to edit auto-filled fields
+        document.addEventListener('click', function(e) {
+            const target = e.target;
+            if (target.classList.contains('auto-filled') && (target.readOnly || target.disabled)) {
+                // Show a brief message
+                const originalTitle = target.title;
+                target.title = 'This field is automatically filled. Select a different rental to change it.';
+                
+                setTimeout(() => {
+                    target.title = originalTitle;
+                }, 3000);
+            }
+        });
+    });
+</script>
+{% endblock %}
