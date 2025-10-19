@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Receipt - {{ payment.payment_id }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background: #f5f5f5;
+            padding: 20px;
+            color: #000;
+            line-height: 1.2;
+        }
+        
+        .receipt-container {
+            max-width: 300px; /* Thermal receipt width (80mm ≈ 300px) */
+            margin: 0 auto;
+            background: white;
+            border: 2px solid #000;
+            padding: 10px;
+            font-size: 12px;
+        }
+        
+        .receipt-header {
+            text-align: center;
+            border-bottom: 1px solid #000;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .company-name {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 3px;
+            text-transform: uppercase;
+        }
+        
+        .company-info {
+            font-size: 10px;
+            margin-bottom: 2px;
+        }
+        
+        .receipt-title {
+            font-size: 12px;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+        
+        .receipt-number {
+            font-size: 10px;
+            margin: 3px 0;
+        }
+        
+        .receipt-body {
+            font-size: 11px;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 2px 0;
+            padding: 1px 0;
+        }
+        
+        .info-label {
+            font-weight: normal;
+        }
+        
+        .info-value {
+            font-weight: bold;
+        }
+        
+        .divider {
+            border-top: 1px solid #000;
+            margin: 8px 0;
+        }
+        
+        .section-title {
+            text-align: center;
+            font-weight: bold;
+            margin: 8px 0 5px 0;
+            text-transform: uppercase;
+        }
+        
+        .item-line {
+            margin: 3px 0;
+        }
+        
+        .item-desc {
+            font-weight: bold;
+            margin-bottom: 1px;
+        }
+        
+        .item-details {
+            font-size: 10px;
+            margin-left: 2px;
+        }
+        
+        .amount-line {
+            display: flex;
+            justify-content: space-between;
+            margin: 2px 0;
+        }
+        
+        .total-section {
+            border-top: 1px solid #000;
+            padding-top: 5px;
+            margin-top: 8px;
+        }
+        
+        .total-line {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            font-size: 13px;
+            margin: 3px 0;
+        }
+        
+        .receipt-footer {
+            text-align: center;
+            border-top: 1px solid #000;
+            padding-top: 8px;
+            margin-top: 10px;
+            font-size: 9px;
+        }
+        
+        .footer-msg {
+            margin: 2px 0;
+        }
+        
+        .print-btn, .back-btn {
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 14px;
+            cursor: pointer;
+            margin: 5px 8px;
+            display: inline-block;
+            font-family: 'Arial', sans-serif;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .back-btn {
+            background: linear-gradient(135deg, #7400B8 0%, #9739C8 100%);
+        }
+        
+        .print-btn {
+            background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+        }
+        
+        .print-btn:hover {
+            background: linear-gradient(135deg, #2563EB 0%, #1E40AF 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(59, 130, 246, 0.4);
+        }
+        
+        .back-btn:hover {
+            background: linear-gradient(135deg, #6D28D9 0%, #8B5CF6 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(116, 0, 184, 0.4);
+        }
+        
+        .stars {
+            text-align: center;
+            margin: 5px 0;
+            font-size: 16px;
+        }
+        
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+                margin: 0;
+            }
+            
+            .receipt-container {
+                border: none;
+                margin: 0;
+                padding: 5px;
+                max-width: none;
+                width: 80mm; /* Standard thermal receipt width */
+            }
+            
+            .print-btn, .back-btn {
+                display: none;
+            }
+        }
+        
+        @media (max-width: 400px) {
+            .receipt-container {
+                max-width: 280px;
+                margin: 10px auto;
+            }
+            
+            .print-btn, .back-btn {
+                display: block;
+                margin: 8px auto;
+                width: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="receipt-container">
+        <!-- Header -->
+        <div class="receipt-header">
+            <div class="company-name">UNIHIVE RENTAL MANAGEMENT</div>
+            <div class="company-info">Property Management Services</div>
+            <div class="company-info">Tel: +256 XXX XXX XXX</div>
+            <div class="company-info">Kampala, Uganda</div>
+            
+            <div class="receipt-title">*** PAYMENT RECEIPT ***</div>
+            <div class="receipt-number">Receipt #: {{ payment.payment_id }}</div>
+        </div>
+        
+        <div class="receipt-body">
+            <!-- Transaction Info -->
+            <div class="info-row">
+                <span class="info-label">Date:</span>
+                <span class="info-value">{{ payment.payment_date|date:"d/m/Y" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Tenant:</span>
+                <span class="info-value">{{ payment.tenant.name }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Phone:</span>
+                <span class="info-value">{{ payment.tenant.phone_number }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Email:</span>
+                <span class="info-value">{{ payment.tenant.email|default:"N/A" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Property:</span>
+                <span class="info-value">{{ payment.rental.property.name }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Unit:</span>
+                <span class="info-value">{{ payment.rental.rental_number }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Period:</span>
+                <span class="info-value">{{ payment.rental_period }}</span>
+            </div>
+            
+            <div class="divider"></div>
+            <!-- Items -->
+            <div class="section-title">ITEMS</div>
+            
+            <div class="item-line">
+                <div class="item-desc">RENTAL PAYMENT</div>
+                <div class="item-details">Property: {{ payment.rental.property.name }}</div>
+                <div class="item-details">Unit: {{ payment.rental.rental_number }}</div>
+                <div class="item-details">Period: {{ payment.rental_period }}</div>
+                <div class="item-details">Payment ID: {{ payment.payment_id }}</div>
+            </div>
+            
+            <div class="divider"></div>
+            
+            <!-- Payment Details -->
+            <div class="amount-line">
+                <span>Amount Due:</span>
+                <span>UGX {{ payment.amount_due|floatformat:0 }}</span>
+            </div>
+            <div class="amount-line">
+                <span>Amount Paid:</span>
+                <span>UGX {{ payment.amount|floatformat:0 }}</span>
+            </div>
+            <div class="amount-line">
+                <span>Balance:</span>
+                <span>UGX {{ remaining_balance|floatformat:0 }}</span>
+            </div>
+            <div class="amount-line">
+                <span>Method:</span>
+                <span>{{ payment.get_payment_method_display }}</span>
+            </div>
+            
+            <div class="total-section">
+                <div class="total-line">
+                    <span>TOTAL PAID:</span>
+                    <span>UGX {{ payment.amount|floatformat:0 }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="receipt-footer">
+            <div class="stars">* * * * * * * * * * * * *</div>
+            <div class="footer-msg">THANK YOU FOR YOUR PAYMENT!</div>
+            <div class="footer-msg">UNIHIVE Property Management</div>
+            <div class="footer-msg">Professional Rental Services</div>
+            <div class="stars">* * * * * * * * * * * * *</div>
+            <div class="footer-msg">Printed: {% now "d/m/Y H:i" %}</div>
+            <div class="footer-msg">Served by: Admin</div>
+        </div>
+    </div>
+
+    <div style="text-align: center; margin: 20px 0; padding: 10px;">
+        <a href="{% url 'payments:payment_list' %}" class="back-btn">← Back to Payments</a>
+        <button class="print-btn" onclick="window.print()">🖨️ Print Receipt</button>
+    </div>
+
+    <script>
+        // Thermal printer optimization
+        window.onload = function() {
+            // Auto-resize for better thermal printing
+            if (window.matchMedia && window.matchMedia('print').matches) {
+                document.body.style.width = '80mm';
+                document.body.style.margin = '0';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -159,12 +159,12 @@
     }
     
     .action-btn {
-        padding: 6px 10px;
-        border-radius: 6px;
-        font-size: 0.875rem;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
         font-weight: 500;
         transition: all 0.2s ease;
-        margin: 0 2px;
+        margin: 0 1px;
     }
     
     .action-btn:hover {
@@ -177,7 +177,12 @@
     }
     
     .btn-edit {
-        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+    }
+    
+    .btn-receipt {
+        background: linear-gradient(135deg, #7400B8 0%, #9739C8 100%);
         color: white;
     }
     
@@ -326,7 +331,7 @@
                             <th class="px-6 py-4 text-left">Rental</th>
                             <th class="px-6 py-4 text-center">Amount Paid</th>
                             <th class="px-6 py-4 text-center">Amount Due</th>
-                            <th class="px-6 py-4 text-center">Balance</th>
+                            <th class="px-6 py-4 text-center">Period</th>
                             <th class="px-6 py-4 text-center">Payment Date</th>
                             <th class="px-6 py-4 text-center">Method</th>
                             <th class="px-6 py-4 text-center">Status</th>
@@ -362,9 +367,12 @@
                                 </span>
                             </td>
                             <td class="px-6 py-4 text-center">
-                                <span class="amount-display text-orange-600" id="balance-{{ payment.payment_id }}">
-                                    UGX {{ payment.amount_due|floatformat:0 }}
-                                </span>
+                                <div class="flex items-center justify-center">
+                                    <i class="fas fa-calendar text-gray-400 mr-2"></i>
+                                    <span class="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
+                                        {{ payment.rental_period|default:"N/A" }}
+                                    </span>
+                                </div>
                             </td>
                             <td class="px-6 py-4 text-center">
                                 <div class="flex items-center justify-center">
@@ -396,9 +404,9 @@
                                 {% endif %}
                             </td>
                             <td class="px-6 py-4 text-center">
-                                {% if payment.amount_due <= payment.amount %}
+                                {% if payment.payment_status == 'PAID' %}
                                     <span class="status-badge status-paid">Paid</span>
-                                {% elif payment.amount > 0 %}
+                                {% elif payment.payment_status == 'PARTIAL' %}
                                     <span class="status-badge status-partial">Partial</span>
                                 {% else %}
                                     <span class="status-badge status-unpaid">Unpaid</span>
@@ -410,6 +418,10 @@
                                             class="action-btn btn-view btn-view-payment" title="View Details">
                                         <i class="fas fa-eye"></i>
                                     </button>
+                                    <a href="{% url 'payments:payment_receipt' payment.payment_id %}" 
+                                       class="action-btn btn-receipt" title="View Receipt" target="_blank">
+                                        <i class="fas fa-receipt"></i>
+                                    </a>
                                     <a href="{% url 'payments:edit_payment' payment.payment_id %}" 
                                        class="action-btn btn-edit" title="Edit Payment">
                                         <i class="fas fa-edit"></i>

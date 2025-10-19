@@ -305,6 +305,101 @@
 
 {% block extra_js %}
 <script>
+    // Update payment info based on tenant, rental, and payment date
+    function updatePaymentInfo() {
+        const tenantSelect = document.getElementById('{{ form.tenant.id_for_label }}');
+        const rentalSelect = document.getElementById('{{ form.rental.id_for_label }}');
+        const paymentDateInput = document.getElementById('{{ form.payment_date.id_for_label }}');
+        const amountDueInput = document.getElementById('{{ form.amount_due.id_for_label }}');
+        const rentalPeriodInput = document.getElementById('{{ form.rental_period.id_for_label }}');
+        
+        if (tenantSelect && rentalSelect && paymentDateInput && 
+            tenantSelect.value && rentalSelect.value && paymentDateInput.value) {
+            
+            // Show loading state
+            if (amountDueInput) {
+                amountDueInput.value = '';
+                amountDueInput.placeholder = 'Calculating...';
+            }
+            
+            // Make AJAX request to get payment info
+            fetch(`{% url 'payments:payment_info_ajax' %}?tenant_id=${tenantSelect.value}&rental_id=${rentalSelect.value}&payment_date=${paymentDateInput.value}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        console.error('Error:', data.error);
+                        if (amountDueInput) {
+                            amountDueInput.placeholder = 'Error calculating balance';
+                        }
+                        return;
+                    }
+                    
+                    // Update form fields
+                    if (rentalPeriodInput) {
+                        rentalPeriodInput.value = data.rental_period;
+                    }
+                    
+                    if (amountDueInput) {
+                        amountDueInput.value = data.remaining_balance;
+                        amountDueInput.dataset.originalValue = data.remaining_balance;
+                        amountDueInput.placeholder = 'Remaining balance calculated';
+                    }
+                    
+                    // Show payment summary info
+                    showPaymentSummary(data);
+                    
+                    // Update payment summary calculations
+                    updatePaymentSummary();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    if (amountDueInput) {
+                        amountDueInput.placeholder = 'Error calculating balance';
+                    }
+                });
+        }
+    }
+    
+    // Show payment summary information
+    function showPaymentSummary(data) {
+        // Create or update payment summary display
+        let summaryDiv = document.getElementById('payment_summary_info');
+        if (!summaryDiv) {
+            summaryDiv = document.createElement('div');
+            summaryDiv.id = 'payment_summary_info';
+            summaryDiv.className = 'mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg';
+            
+            const formContainer = document.querySelector('.form-card');
+            if (formContainer) {
+                formContainer.appendChild(summaryDiv);
+            }
+        }
+        
+        summaryDiv.innerHTML = `
+            <h4 class="font-semibold text-blue-800 mb-2">Payment Summary for ${data.rental_period}</h4>
+            <div class="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                    <span class="text-blue-600">Monthly Rent:</span>
+                    <span class="font-medium">UGX ${parseFloat(data.monthly_rent).toLocaleString()}</span>
+                </div>
+                <div>
+                    <span class="text-blue-600">Previous Payments:</span>
+                    <span class="font-medium">${data.payment_count} (UGX ${parseFloat(data.total_paid).toLocaleString()})</span>
+                </div>
+                <div>
+                    <span class="text-blue-600">Remaining Balance:</span>
+                    <span class="font-medium text-red-600">UGX ${parseFloat(data.remaining_balance).toLocaleString()}</span>
+                </div>
+                <div>
+                    <span class="text-blue-600">Current Status:</span>
+                    <span class="font-medium ${data.status === 'PAID' ? 'text-green-600' : data.status === 'PARTIAL' ? 'text-yellow-600' : 'text-red-600'}">
+                        ${data.status}
+                    </span>
+                </div>
+            </div>
+        `;
+    }
+
     // Calculate balance and payment status
     function updatePaymentSummary() {
         const amountInput = document.getElementById('{{ form.amount.id_for_label }}');
@@ -312,30 +407,51 @@
         const balanceDisplay = document.getElementById('balance_remaining');
         const statusDisplay = document.getElementById('payment_status');
         
-        if (amountInput && amountDueInput && balanceDisplay && statusDisplay) {
+        if (amountInput && amountDueInput) {
             const amount = parseFloat(amountInput.value) || 0;
-            const amountDue = parseFloat(amountDueInput.value) || 0;
-            const balance = amountDue - amount;
+            const originalAmountDue = parseFloat(amountDueInput.dataset.originalValue || amountDueInput.value) || 0;
+            const newBalance = Math.max(0, originalAmountDue - amount);
             
-            // Update balance display
-            if (amount && amountDue) {
-                balanceDisplay.textContent = `UGX ${balance.toLocaleString()}`;
-                
-                // Update status
-                if (balance <= 0) {
-                    statusDisplay.textContent = 'Fully Paid';
-                    statusDisplay.className = 'font-medium text-green-600';
-                } else if (amount > 0) {
-                    statusDisplay.textContent = 'Partially Paid';
-                    statusDisplay.className = 'font-medium text-yellow-600';
+            // Temporarily remove readonly to update value
+            const wasReadonly = amountDueInput.hasAttribute('readonly');
+            if (wasReadonly) {
+                amountDueInput.removeAttribute('readonly');
+            }
+            
+            // Update the amount_due field with the new balance
+            amountDueInput.value = newBalance;
+            
+            // Restore readonly if it was set
+            if (wasReadonly) {
+                amountDueInput.setAttribute('readonly', true);
+            }
+            
+            // Update balance display if it exists
+            if (balanceDisplay) {
+                if (originalAmountDue > 0) {
+                    balanceDisplay.textContent = `UGX ${newBalance.toLocaleString()}`;
                 } else {
-                    statusDisplay.textContent = 'Unpaid';
-                    statusDisplay.className = 'font-medium text-red-600';
+                    balanceDisplay.textContent = 'Enter amounts to calculate';
                 }
-            } else {
-                balanceDisplay.textContent = 'Enter amounts to calculate';
-                statusDisplay.textContent = '-';
-                statusDisplay.className = 'font-medium text-gray-900';
+            }
+            
+            // Update status display if it exists
+            if (statusDisplay) {
+                if (originalAmountDue > 0) {
+                    if (newBalance <= 0 && amount > 0) {
+                        statusDisplay.textContent = 'Will be Fully Paid';
+                        statusDisplay.className = 'font-medium text-green-600';
+                    } else if (amount > 0) {
+                        statusDisplay.textContent = 'Will be Partially Paid';
+                        statusDisplay.className = 'font-medium text-yellow-600';
+                    } else {
+                        statusDisplay.textContent = 'Unpaid';
+                        statusDisplay.className = 'font-medium text-red-600';
+                    }
+                } else {
+                    statusDisplay.textContent = '-';
+                    statusDisplay.className = 'font-medium text-gray-900';
+                }
             }
         }
     }
@@ -357,12 +473,18 @@
         const amountInput = document.getElementById('{{ form.amount.id_for_label }}');
         const amountDueInput = document.getElementById('{{ form.amount_due.id_for_label }}');
         
+        // Set original value on page load if amount_due has a value
+        if (amountDueInput && amountDueInput.value && !amountDueInput.dataset.originalValue) {
+            amountDueInput.dataset.originalValue = amountDueInput.value;
+        }
+        
         if (amountInput) {
             amountInput.addEventListener('input', updatePaymentSummary);
         }
         
         if (amountDueInput) {
-            amountDueInput.addEventListener('input', updatePaymentSummary);
+            // Don't add input listener to readonly field
+            // amountDueInput.addEventListener('input', updatePaymentSummary);
         }
         
         // Initial calculation
@@ -382,5 +504,6 @@
             });
         });
     });
+</script>
 </script>
 {% endblock %}
